@@ -84,6 +84,8 @@ func fetch(cb func(chan Response, chan error)) (r chan Response, er chan error) 
 
 func Fetch() (chan Response, chan error) {
 	return fetch(func(r chan Response, er chan error) {
+		defer close(r)
+		defer close(er)
 		doc, err := goquery.NewDocument(url)
 		if err != nil {
 			er <- err
@@ -92,15 +94,17 @@ func Fetch() (chan Response, chan error) {
 		job("band", r, doc, bandsAdded, "#additionBands", "added")
 		job("band", r, doc, bandsUpdated, "#updatedBands", "updated")
 		job("review", r, doc, reviewsAdded, "#lastReviews", "added")
-		go fetchLabels(r, er, labelsAdded, url+"/index/latest-labels", "added")
-		go fetchLabels(r, er, labelsUpdated, url+"/index/latest-labels/by/modified", "updated")
-		go fetchArtists(r, er, artistsAdded, url+"/index/latest-artists", "added")
-		go fetchArtists(r, er, artistsUpdated, url+"/index/latest-artists/by/modified", "updated")
+		fetchLabels(r, er, labelsAdded, url+"/index/latest-labels", "added")
+		fetchLabels(r, er, labelsUpdated, url+"/index/latest-labels/by/modified", "updated")
+		fetchArtists(r, er, artistsAdded, url+"/index/latest-artists", "added")
+		fetchArtists(r, er, artistsUpdated, url+"/index/latest-artists/by/modified", "updated")
 	})
 }
 
 func FetchBands() (chan Response, chan error) {
 	return fetch(func(r chan Response, er chan error) {
+		defer close(r)
+		defer close(er)
 		doc, err := goquery.NewDocument(url)
 		if err != nil {
 			er <- err
@@ -122,8 +126,10 @@ func fetchLabels(r chan Response, er chan error, cache map[string]*Response, url
 
 func FetchLabels() (chan Response, chan error) {
 	return fetch(func(r chan Response, er chan error) {
-		go fetchLabels(r, er, labelsAdded, url+"/index/latest-labels", "added")
-		go fetchLabels(r, er, labelsUpdated, url+"/index/latest-labels/by/modified", "updated")
+		defer close(r)
+		defer close(er)
+		fetchLabels(r, er, labelsAdded, url+"/index/latest-labels", "added")
+		fetchLabels(r, er, labelsUpdated, url+"/index/latest-labels/by/modified", "updated")
 	})
 }
 
@@ -138,7 +144,9 @@ func fetchArtists(r chan Response, er chan error, cache map[string]*Response, ur
 
 func FetchArtists() (chan Response, chan error) {
 	return fetch(func(r chan Response, er chan error) {
-		go fetchArtists(r, er, artistsAdded, url+"/index/latest-artists", "added")
-		go fetchArtists(r, er, artistsUpdated, url+"/index/latest-artists/by/modified", "updated")
+		defer close(r)
+		defer close(er)
+		fetchArtists(r, er, artistsAdded, url+"/index/latest-artists", "added")
+		fetchArtists(r, er, artistsUpdated, url+"/index/latest-artists/by/modified", "updated")
 	})
 }
